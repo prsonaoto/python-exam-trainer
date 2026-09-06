@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Python模擬">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Pythonデータ分析 模擬トレーナー v2</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#657085;--line:#dce2ea;--accent:#111827;--ok:#087f5b;--okbg:#e9fbf4;--ng:#c92a2a;--ngbg:#fff0f0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+.app{max-width:760px;margin:auto;padding:14px 12px 88px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 2px 14px}
+h1{font-size:19px;margin:0}.muted{color:var(--muted);font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 18px rgba(20,30,55,.045)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.btn{appearance:none;border:0;border-radius:12px;padding:13px 15px;font-weight:700;font-size:15px;background:#e9edf3;color:var(--text);cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff}.btn.danger{background:#fff0f0;color:var(--ng)}.btn:disabled{opacity:.5}
+select{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;font-size:15px}
+.progress{height:8px;background:#e7ebf0;border-radius:99px;overflow:hidden;margin:10px 0 16px}.progress>div{height:100%;background:var(--accent);width:0}
+.qmeta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}.question{font-size:19px;line-height:1.55;font-weight:750;margin:12px 0}
+.choice{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px;margin:7px 0;font-size:16px;line-height:1.45}
+.choice.correct{background:var(--okbg);border-color:#63d9b0}.choice.wrong{background:var(--ngbg);border-color:#ff8787}.feedback{display:none;margin-top:12px;border-radius:12px;padding:13px;line-height:1.55}.feedback.show.ok{display:block;background:var(--okbg);border:1px solid #a7e9ce}.feedback.show.ng{display:block;background:var(--ngbg);border:1px solid #ffc9c9}
+.statsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.stat{background:#f7f9fc;border:1px solid var(--line);border-radius:13px;padding:12px;text-align:center}.stat b{font-size:22px;display:block}.tbl{width:100%;border-collapse:collapse;font-size:14px}.tbl th,.tbl td{padding:9px 6px;border-bottom:1px solid #edf0f4;text-align:left}.tbl td:last-child,.tbl th:last-child{text-align:right}
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:flex;justify-content:center;padding:8px 10px calc(8px + env(safe-area-inset-bottom));z-index:5}.tabs{display:flex;gap:7px;width:min(760px,100%)}.tab{flex:1;border:0;background:#edf1f6;border-radius:11px;padding:11px 5px;font-weight:700;color:#4b5565}.tab.active{background:#111827;color:#fff}
+.view{display:none}.view.active{display:block}.empty{padding:24px 8px;text-align:center;color:var(--muted)}.pill{display:inline-block;border-radius:99px;padding:5px 9px;font-size:12px;background:#eef2f7;color:#526072;margin-right:4px}
+pre{white-space:pre-wrap;word-break:break-word;background:#f7f9fc;border:1px solid var(--line);padding:12px;border-radius:12px;font-size:12px}.notice{font-size:12px;color:var(--muted);line-height:1.5}
+@media(max-width:480px){.statsgrid{grid-template-columns:repeat(3,1fr)}.stat b{font-size:19px}.question{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div><h1>Pythonデータ分析 模擬トレーナー v2</h1><div class="muted">200問バンク・回答履歴を端末内に保存</div></div><div id="historyCount" class="muted"></div></div>
+
+  <section id="quizView" class="view active">
+    <div class="card" id="setupCard">
+      <b>模擬を開始</b>
+      <p class="muted">200問バンクからランダム出題。学習履歴は同じブラウザに保存されます。</p>
+      <div class="row">
+        <select id="questionCount">
+          <option value="5">5問</option><option value="10" selected>10問</option><option value="20">20問</option><option value="40">40問</option>
+        </select>
+        <select id="categoryFilter"><option value="ALL">全分野</option></select>
+        <button class="btn primary" id="startBtn">開始</button>
+      </div>
+    </div>
+
+    <div class="card" id="quizCard" style="display:none">
+      <div class="qmeta"><span id="qno"></span><span id="liveScore"></span></div>
+      <div class="progress"><div id="bar"></div></div>
+      <div id="tags"></div>
+      <div id="question" class="question"></div>
+      <div id="choices"></div>
+      <div id="feedback" class="feedback"></div>
+      <div class="row" style="margin-top:14px"><button id="nextBtn" class="btn primary" style="display:none">次の問題</button><button id="quitBtn" class="btn">中断</button></div>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none;text-align:center">
+      <div class="muted">今回の結果</div><div id="resultScore" style="font-size:42px;font-weight:800;margin:8px 0"></div><div id="resultText"></div>
+      <div class="row" style="justify-content:center;margin-top:16px"><button class="btn primary" id="retryBtn">別の模擬を開始</button><button class="btn" data-go="statsView">成績を見る</button></div>
+    </div>
+  </section>
+
+  <section id="statsView" class="view">
+    <div class="statsgrid">
+      <div class="stat"><span class="muted">回答数</span><b id="stTotal">0</b></div>
+      <div class="stat"><span class="muted">正答率</span><b id="stRate">-</b></div>
+      <div class="stat"><span class="muted">正解数</span><b id="stCorrect">0</b></div>
+    </div>
+    <div class="card">
+      <b>分野別</b>
+      <div id="categoryStats"></div>
+    </div>
+    <div class="card">
+      <b>苦手トピック</b>
+      <div class="muted" style="margin:5px 0 10px">3回以上回答したトピックを、正答率の低い順に表示します。</div>
+      <div id="weakTopics"></div>
+    </div>
+    <div class="card">
+      <b>最近の回答</b>
+      <div id="recentHistory"></div>
+    </div>
+  </section>
+
+  <section id="dataView" class="view">
+    <div class="card">
+      <b>ChatGPTに回答履歴を渡す</b>
+      <p class="muted">一番確実なのは「履歴JSONを保存」→ ChatGPTでそのJSONを添付する方法です。</p>
+      <div class="row">
+        <button class="btn primary" id="exportBtn">履歴JSONを保存</button>
+        <button class="btn" id="copyBtn">分析依頼文をコピー</button>
+        <button class="btn" id="shareBtn">共有</button>
+      </div>
+      <p class="notice">「共有」は対応ブラウザではスマホの共有シートを開きます。ChatGPTアプリが共有先に出ない場合は、JSONを保存してこのチャットへ添付してください。</p>
+    </div>
+    <div class="card">
+      <b>バックアップ / 復元</b>
+      <p class="muted">機種変更やブラウザ変更に備えてJSONをバックアップできます。</p>
+      <div class="row">
+        <label class="btn">履歴JSONを読み込む<input id="importFile" type="file" accept="application/json,.json" style="display:none"></label>
+        <button class="btn danger" id="clearBtn">履歴を全削除</button>
+      </div>
+    </div>
+    <div class="card">
+      <b>ChatGPTに渡す内容のプレビュー</b>
+      <pre id="sharePreview"></pre>
+    </div>
+  </section>
+</div>
+
+<div class="tabbar"><div class="tabs">
+  <button class="tab active" data-view="quizView">模擬</button>
+  <button class="tab" data-view="statsView">成績</button>
+  <button class="tab" data-view="dataView">データ</button>
+</div></div>
+
+<script src="./data/questions-01.js"></script>
+<script src="./data/questions-02.js"></script>
+<script src="./data/questions-03.js"></script>
+<script src="./data/questions-04.js"></script>
+<script>
+const BANK = window.QUESTION_BANK || [];
+const STORAGE_KEY = "python_data_exam_history_v2";
+let session=[], current=0, score=0, answered=false, sessionId="";
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b}
+function loadHistory(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch(e){return []}}
+function saveHistory(h){localStorage.setItem(STORAGE_KEY,JSON.stringify(h));refreshAll()}
+function fmtPct(a,b){return b?Math.round(a/b*100)+"%":"-"}
+function nowISO(){return new Date().toISOString()}
+function uid(){return "S"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+function initCategories(){
+  const s=document.getElementById("categoryFilter");
+  [...new Set(BANK.map(x=>x.category))].forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;s.appendChild(o)})
+}
+function startQuiz(){
+  const n=Number(document.getElementById("questionCount").value);
+  const cat=document.getElementById("categoryFilter").value;
+  let pool=cat==="ALL"?BANK:BANK.filter(x=>x.category===cat);
+  if(!pool.length)return;
+  session=shuffle(pool).slice(0,Math.min(n,pool.length));current=0;score=0;answered=false;sessionId=uid();
+  document.getElementById("setupCard").style.display="none";document.getElementById("resultCard").style.display="none";document.getElementById("quizCard").style.display="block";renderQuestion()
+}
+function renderQuestion(){
+  answered=false;const q=session[current];
+  document.getElementById("qno").textContent=`問題 ${current+1} / ${session.length}`;
+  document.getElementById("liveScore").textContent=`正解 ${score}`;
+  document.getElementById("bar").style.width=`${current/session.length*100}%`;
+  document.getElementById("tags").innerHTML=`<span class="pill">${q.category}</span><span class="pill">${q.topic}</span><span class="pill">${q.difficulty}</span>`;
+  document.getElementById("question").textContent=q.q;
+  const box=document.getElementById("choices");box.innerHTML="";
+  ["A","B","C","D"].forEach((L,i)=>{const b=document.createElement("button");b.className="choice";b.textContent=`${L}. ${q.choices[i]}`;b.onclick=()=>answer(i,b);box.appendChild(b)});
+  const fb=document.getElementById("feedback");fb.className="feedback";fb.innerHTML="";
+  document.getElementById("nextBtn").style.display="none"
+}
+function answer(i,btn){
+  if(answered)return;answered=true;const q=session[current];const buttons=[...document.querySelectorAll(".choice")];
+  buttons.forEach(b=>b.disabled=true);buttons[q.answer].classList.add("correct");
+  const ok=i===q.answer;if(ok)score++;else btn.classList.add("wrong");
+  const fb=document.getElementById("feedback");fb.className="feedback show "+(ok?"ok":"ng");
+  fb.innerHTML=`<b>${ok?"✅ 正解":"❌ 不正解"}</b><br>${ok?"":`正解は ${["A","B","C","D"][q.answer]}。<br>`}${q.explanation}`;
+  const h=loadHistory();const prev=h.filter(x=>x.question_id===q.id).length;
+  h.push({session_id:sessionId,question_id:q.id,category:q.category,topic:q.topic,difficulty:q.difficulty,correct:ok,selected_answer:["A","B","C","D"][i],correct_answer:["A","B","C","D"][q.answer],answered_at:nowISO(),attempt_no:prev+1});
+  saveHistory(h);
+  document.getElementById("liveScore").textContent=`正解 ${score}`;document.getElementById("bar").style.width=`${(current+1)/session.length*100}%`;
+  const nb=document.getElementById("nextBtn");nb.style.display="inline-block";nb.textContent=current===session.length-1?"結果を見る":"次の問題"
+}
+function nextQuestion(){
+  if(current<session.length-1){current++;renderQuestion()}else{
+    document.getElementById("quizCard").style.display="none";document.getElementById("resultCard").style.display="block";
+    document.getElementById("resultScore").textContent=`${score} / ${session.length}`;document.getElementById("resultText").textContent=`正答率 ${Math.round(score/session.length*100)}%`
+  }
+}
+function quitQuiz(){if(confirm("この模擬を中断しますか？")){document.getElementById("quizCard").style.display="none";document.getElementById("setupCard").style.display="block"}}
+
+function aggregate(){
+  const h=loadHistory(), byCat={}, byTopic={};
+  for(const r of h){
+    const c=byCat[r.category]||(byCat[r.category]={total:0,correct:0});c.total++;if(r.correct)c.correct++;
+    const key=r.category+"｜"+r.topic;const t=byTopic[key]||(byTopic[key]={category:r.category,topic:r.topic,total:0,correct:0});t.total++;if(r.correct)t.correct++;
+  }
+  return {h,byCat,byTopic}
+}
+function renderStats(){
+  const {h,byCat,byTopic}=aggregate();const correct=h.filter(x=>x.correct).length;
+  document.getElementById("stTotal").textContent=h.length;document.getElementById("stCorrect").textContent=correct;document.getElementById("stRate").textContent=fmtPct(correct,h.length);
+  const cats=Object.entries(byCat).sort((a,b)=>a[1].correct/a[1].total-b[1].correct/b[1].total);
+  document.getElementById("categoryStats").innerHTML=cats.length?`<table class="tbl"><tr><th>分野</th><th>正答率</th></tr>${cats.map(([k,v])=>`<tr><td>${k}<br><span class="muted">${v.correct}/${v.total}</span></td><td>${fmtPct(v.correct,v.total)}</td></tr>`).join("")}</table>`:`<div class="empty">まだ回答履歴がありません。</div>`;
+  const weak=Object.values(byTopic).filter(x=>x.total>=3).sort((a,b)=>(a.correct/a.total)-(b.correct/b.total)).slice(0,8);
+  document.getElementById("weakTopics").innerHTML=weak.length?`<table class="tbl"><tr><th>トピック</th><th>正答率</th></tr>${weak.map(v=>`<tr><td>${v.category} / ${v.topic}<br><span class="muted">${v.correct}/${v.total}</span></td><td>${fmtPct(v.correct,v.total)}</td></tr>`).join("")}</table>`:`<div class="empty">各トピックを3回以上解くと表示されます。</div>`;
+  const recent=[...h].reverse().slice(0,12);
+  document.getElementById("recentHistory").innerHTML=recent.length?`<table class="tbl"><tr><th>問題</th><th>結果</th></tr>${recent.map(r=>`<tr><td>${r.category} / ${r.topic}<br><span class="muted">${new Date(r.answered_at).toLocaleString()}</span></td><td>${r.correct?"✅":"❌"}</td></tr>`).join("")}</table>`:`<div class="empty">まだ履歴がありません。</div>`
+}
+function makeSummary(){
+  const {h,byCat,byTopic}=aggregate(), correct=h.filter(x=>x.correct).length;
+  const cats=Object.entries(byCat).map(([k,v])=>({name:k,total:v.total,correct:v.correct,rate:v.total?v.correct/v.total:0})).sort((a,b)=>a.rate-b.rate);
+  const weak=Object.values(byTopic).filter(x=>x.total>=2).map(v=>({...v,rate:v.correct/v.total})).sort((a,b)=>a.rate-b.rate).slice(0,10);
+  let s=`Pythonデータ分析試験の学習履歴を分析してください。\n\n総回答数: ${h.length}\n正解数: ${correct}\n正答率: ${h.length?Math.round(correct/h.length*100):0}%\n\n【分野別】\n`;
+  s+=cats.map(x=>`- ${x.name}: ${x.correct}/${x.total} (${Math.round(x.rate*100)}%)`).join("\n")||"- データなし";
+  s+=`\n\n【弱いトピック候補】\n`;
+  s+=weak.map(x=>`- ${x.category} / ${x.topic}: ${x.correct}/${x.total} (${Math.round(x.rate*100)}%)`).join("\n")||"- まだ十分な履歴なし";
+  s+=`\n\n添付したJSONも参照して、得意・不得意、優先して復習すべき論点、次に出すべき演習問題の配分を提案してください。`;
+  return s
+}
+function exportJSON(){
+  const payload={app:"Pythonデータ分析 模擬トレーナー v2",bank_size:BANK.length,exported_at:nowISO(),history:loadHistory(),summary_text:makeSummary()};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`python_exam_history_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)
+}
+async function copySummary(){const t=makeSummary();try{await navigator.clipboard.writeText(t);alert("ChatGPTへの分析依頼文をコピーしました。")}catch(e){prompt("この文章をコピーしてください",t)}}
+async function shareSummary(){
+  const text=makeSummary();
+  if(navigator.share){try{await navigator.share({title:"Python試験 学習履歴",text});return}catch(e){}}
+  await copySummary()
+}
+function importJSON(file){
+  const r=new FileReader();r.onload=()=>{try{const obj=JSON.parse(r.result);const arr=Array.isArray(obj)?obj:obj.history;if(!Array.isArray(arr))throw new Error();if(confirm(`${arr.length}件の履歴を読み込みます。現在の履歴に追加しますか？`)){const merged=loadHistory().concat(arr);saveHistory(merged);alert("読み込みました。")}}catch(e){alert("読み込める履歴JSONではありません。")}};r.readAsText(file)
+}
+function clearHistory(){if(confirm("回答履歴をすべて削除します。元に戻せません。")){localStorage.removeItem(STORAGE_KEY);refreshAll()}}
+
+function showView(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===id));if(id==="statsView")renderStats();if(id==="dataView")document.getElementById("sharePreview").textContent=makeSummary()
+}
+function refreshAll(){document.getElementById("historyCount").textContent=`履歴 ${loadHistory().length}件`;renderStats();document.getElementById("sharePreview").textContent=makeSummary()}
+
+document.getElementById("startBtn").onclick=startQuiz;document.getElementById("nextBtn").onclick=nextQuestion;document.getElementById("quitBtn").onclick=quitQuiz;document.getElementById("retryBtn").onclick=()=>{document.getElementById("resultCard").style.display="none";document.getElementById("setupCard").style.display="block"};
+document.getElementById("exportBtn").onclick=exportJSON;document.getElementById("copyBtn").onclick=copySummary;document.getElementById("shareBtn").onclick=shareSummary;document.getElementById("clearBtn").onclick=clearHistory;
+document.getElementById("importFile").onchange=e=>{if(e.target.files[0])importJSON(e.target.files[0]);e.target.value=""};
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showView(t.dataset.view));document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showView(b.dataset.go));
+initCategories();refreshAll();
+</script>
+<script>
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+</script>
+</body></html>
