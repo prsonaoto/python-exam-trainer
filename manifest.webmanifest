@@ -1,0 +1,10 @@
+{
+  "name": "Pythonデータ分析 模擬トレーナー",
+  "short_name": "Python模擬",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#111827",
+  "lang": "ja"
+}
