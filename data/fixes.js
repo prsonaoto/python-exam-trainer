@@ -22,9 +22,9 @@ window.QUESTION_BANK=window.QUESTION_BANK||[];
 
 (function(){
   window.addEventListener('load',()=>{
-    document.title='Pythonデータ分析 模擬トレーナー v5';
+    document.title='Pythonデータ分析 模擬トレーナー v5.1';
     const h1=document.querySelector('.top h1');
-    if(h1) h1.textContent='Pythonデータ分析 模擬トレーナー v5';
+    if(h1) h1.textContent='Pythonデータ分析 模擬トレーナー v5.1';
 
     const style=document.createElement('style');
     style.textContent='.feedback.show.skip{display:block;background:var(--card);border:1px solid var(--line)} .skipMark{font-weight:800}';
@@ -173,7 +173,7 @@ window.QUESTION_BANK=window.QUESTION_BANK||[];
     };
 
     function analysisPrompt(){
-      return 'Python 3 エンジニア認定データ分析試験トレーナーの回答履歴です。添付したJSONの回答単位データを分析してください。skipped=true は「分からない」として強い知識不足シグナルとして扱い、正答率には含めないでください。偶然正解の可能性も考慮し、知識不足の論点と、問題文・選択肢・正解設定など問題バンク側の改善点を分けて指摘してください。複数正解、曖昧な表現、重複や不自然な問題があれば具体的に示してください。必要なら追加すべきオリジナル問題の論点と難易度も提案してください。';
+      return 'Python 3 エンジニア認定データ分析試験トレーナーの回答履歴です。以下の回答単位データを分析してください。skipped=true は「分からない」として強い知識不足シグナルとして扱い、正答率には含めないでください。偶然正解の可能性も考慮し、知識不足の論点と、問題文・選択肢・正解設定など問題バンク側の改善点を分けて指摘してください。複数正解、曖昧な表現、重複や不自然な問題があれば具体的に示してください。必要なら追加すべきオリジナル問題の論点と難易度も提案してください。';
     }
 
     function shareHistoryRows(){
@@ -192,7 +192,7 @@ window.QUESTION_BANK=window.QUESTION_BANK||[];
           selected_answer:r.selected_answer??null,
           selected_choice:r.selected_choice??null,
           correct_answer:r.correct_answer??null,
-          correct_choice:r.correct_choice??(q? q.choices[q.answer]:null),
+          correct_choice:r.correct_choice??(q?q.choices[q.answer]:null),
           attempt_no:r.attempt_no??null,
           answered_at:r.answered_at??null
         };
@@ -201,7 +201,7 @@ window.QUESTION_BANK=window.QUESTION_BANK||[];
 
     function sharePayload(){
       return {
-        app:'Pythonデータ分析 模擬トレーナー v5',
+        app:'Pythonデータ分析 模擬トレーナー v5.1',
         bank_size:BANK.length,
         exported_at:nowISO(),
         note:'集計値ではなく回答単位の生データです。skipped=true は「分からない」を表します。',
@@ -211,11 +211,22 @@ window.QUESTION_BANK=window.QUESTION_BANK||[];
 
     function payloadText(){return JSON.stringify(sharePayload(),null,2);}
     function payloadFilename(ext='json'){return `python_exam_history_${new Date().toISOString().slice(0,10)}.${ext}`;}
+    function shareText(){return `${analysisPrompt()}\n\n--- 回答履歴JSON ---\n${payloadText()}`;}
+
     function downloadPayload(){
       const blob=new Blob([payloadText()],{type:'application/json'});
       const a=document.createElement('a');
       a.href=URL.createObjectURL(blob);
       a.download=payloadFilename('json');
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    }
+
+    function downloadShareText(){
+      const blob=new Blob([shareText()],{type:'text/plain;charset=utf-8'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=payloadFilename('txt');
       a.click();
       setTimeout(()=>URL.revokeObjectURL(a.href),1500);
     }
@@ -228,30 +239,28 @@ window.QUESTION_BANK=window.QUESTION_BANK||[];
     };
 
     window.shareHistoryToChatGPT=async function(){
-      const json=payloadText();
-      const promptText=analysisPrompt();
-      const jsonFile=new File([json],payloadFilename('json'),{type:'application/json'});
-      const textFile=new File([json],payloadFilename('txt'),{type:'text/plain'});
-      let file=null;
+      const textFile=new File([shareText()],payloadFilename('txt'),{type:'text/plain'});
+      let canShareFile=true;
       try{
-        if(navigator.canShare && navigator.canShare({files:[jsonFile]})) file=jsonFile;
-        else if(navigator.canShare && navigator.canShare({files:[textFile]})) file=textFile;
-        else if(!navigator.canShare) file=jsonFile;
-      }catch(e){}
+        if(navigator.canShare) canShareFile=navigator.canShare({files:[textFile]});
+      }catch(e){canShareFile=false;}
 
-      if(navigator.share && file){
+      if(navigator.share && canShareFile){
         try{
-          await navigator.share({title:'Python試験 学習履歴',text:promptText,files:[file]});
+          await navigator.share({title:'Python試験 学習履歴',files:[textFile]});
           return;
         }catch(e){
           if(e && e.name==='AbortError') return;
         }
       }
 
-      downloadPayload();
-      try{await navigator.clipboard.writeText(promptText);}
-      catch(e){}
-      alert('この端末ではファイル付き共有を直接使えなかったため、JSONを保存し、分析プロンプトをコピーしました。');
+      try{
+        await navigator.clipboard.writeText(shareText());
+        alert('ファイル共有が使えなかったため、分析プロンプト＋回答履歴をクリップボードへコピーしました。ChatGPTに貼り付けてください。');
+      }catch(e){
+        downloadShareText();
+        alert('直接共有できなかったため、TXTファイルとして保存しました。');
+      }
     };
     window.shareSummary=window.shareHistoryToChatGPT;
 
@@ -280,7 +289,7 @@ window.QUESTION_BANK=window.QUESTION_BANK||[];
     const dataCard=document.querySelector('#dataView .card');
     if(dataCard){
       const title=dataCard.querySelector('b');if(title)title.textContent='ChatGPTへ回答履歴を送る';
-      const desc=dataCard.querySelector('p');if(desc)desc.textContent='JSONをその場で生成し、共有シートからChatGPTへ送ります。保存は不要です。';
+      const desc=dataCard.querySelector('p');if(desc)desc.textContent='分析プロンプト＋回答履歴JSONをTXTにまとめ、共有シートからChatGPTへ送ります。';
     }
     const preview=document.getElementById('sharePreview');
     if(preview)preview.textContent=analysisPrompt();
