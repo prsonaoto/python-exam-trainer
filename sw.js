@@ -1,4 +1,4 @@
-const CACHE_NAME = "python-exam-trainer-v5";
+const CACHE_NAME = "python-exam-trainer-v5-1";
 const ASSETS = [
   "./",
   "./index.html",
