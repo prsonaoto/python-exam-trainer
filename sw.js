@@ -1,4 +1,4 @@
-const CACHE_NAME = "python-exam-trainer-v7-0";
+const CACHE_NAME = "python-exam-trainer-v7-0-1";
 const ASSETS = [
   "./",
   "./index.html",
@@ -15,7 +15,8 @@ const ASSETS = [
   "./data/v6-2.js",
   "./data/v6-3.js",
   "./data/v6-4.js",
-  "./data/v7.js"
+  "./data/v7.js",
+  "./data/v7-0-1.js"
 ];
 
 self.addEventListener("install", event => {
