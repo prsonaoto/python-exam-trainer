@@ -7,3 +7,4 @@ document.write('<script src="./data/v6-4.js"><\/script>');
 document.write('<script src="./data/v7.js"><\/script>');
 document.write('<script src="./data/v7-0-1.js"><\/script>');
 document.write('<script src="./data/v7-1.js"><\/script>');
+document.write('<script src="./data/v7-2.js"><\/script>');
