@@ -9,3 +9,4 @@ document.write('<script src="./data/v7-0-1.js"><\/script>');
 document.write('<script src="./data/v7-1.js"><\/script>');
 document.write('<script src="./data/v7-2.js"><\/script>');
 document.write('<script src="./data/v7-3.js"><\/script>');
+document.write('<script src="./data/v7-3-meta.js"><\/script>');
